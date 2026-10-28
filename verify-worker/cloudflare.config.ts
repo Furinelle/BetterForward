@@ -6,7 +6,7 @@ export default defineConfig({
 		name: "betterforward-verify",
 		compatibilityDate: "2026-09-25",
 		entrypoint,
-		domains: ["verify.fontaine.blue"],
+		domains: ["verify.furina.ai"],
 		workersDev: false,
 		previewUrls: false,
 		exports: {

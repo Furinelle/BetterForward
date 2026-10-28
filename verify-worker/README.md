@@ -9,4 +9,4 @@ BetterForward sees the result immediately from another region).
 - `/v/:token` is the Mini App page with the Turnstile widget
 
 Deploy with `npm install && cf deploy`. Secrets: `TURNSTILE_SECRET`, `API_KEY`
-(the same key goes into BetterForward's TGuard API settings, URL `https://verify.fontaine.blue`).
+(the same key goes into BetterForward's TGuard API settings, URL `https://verify.furina.ai`).
