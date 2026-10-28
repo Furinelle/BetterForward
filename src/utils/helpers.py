@@ -6,6 +6,7 @@ import re
 from telebot.formatting import apply_html_entities
 
 from src.config import _, logger
+from src.utils.user_meta import format_dc, format_registration
 
 
 START_PAYLOAD_RE = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
@@ -58,7 +59,7 @@ def format_language(language_code: str | None) -> str:
 
 def build_user_info_pin_text(user_id: int, first_name: str, last_name: str | None,
                              username: str | None, language_code: str | None = None,
-                             tag: str | None = None) -> str:
+                             tag: str | None = None, dc: int | None = None) -> str:
     """Build markdown text for the pinned user info message in a topic."""
     username_display = _("Not set") if username is None else f"@{username}"
     last_name_part = "" if last_name is None else f" {last_name}"
@@ -68,6 +69,8 @@ def build_user_info_pin_text(user_id: int, first_name: str, last_name: str | Non
         f"• {_('Full Name')}: {full_name}",
         f"• {_('Username')}: {escape_markdown(username_display)}",
         f"• {_('Language')}: {escape_markdown(format_language(language_code))}",
+        f"• {_('Data Center')}: {format_dc(dc)}",
+        f"• {_('Registered')}: {format_registration(user_id)}",
     ]
     if tag:
         lines.append(f"• {_('Tag')}: #{escape_markdown(tag)}")

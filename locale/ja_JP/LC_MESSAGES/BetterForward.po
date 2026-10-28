@@ -1728,3 +1728,27 @@ msgstr "メッセージ {} への処理済みリアクションの追加に失�
 
 msgid "Failed to remove processed reaction from message {}: {}"
 msgstr "メッセージ {} の処理済みリアクションの削除に失敗しました：{}"
+
+msgid "Data Center"
+msgstr "データセンター"
+
+msgid "Registered"
+msgstr "登録時期"
+
+msgid "approx. {}"
+msgstr "約 {}"
+
+msgid "before {}"
+msgstr "{} より前"
+
+msgid "after {}"
+msgstr "{} 以降"
+
+msgid "Miami"
+msgstr "マイアミ"
+
+msgid "Amsterdam"
+msgstr "アムステルダム"
+
+msgid "Singapore"
+msgstr "シンガポール"

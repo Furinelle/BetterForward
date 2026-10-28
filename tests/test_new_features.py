@@ -183,6 +183,8 @@ def test_pin_text_format():
         "• Full Name: Alice Smith\n"
         "• Username: @alice\\_s\n"
         "• Language: en 🇬🇧\n"
+        "• Data Center: Unknown\n"
+        "• Registered: approx. 2024-06\n"
         "#id7398097664"
     )
 
@@ -219,3 +221,64 @@ def test_stats_excludes_expired_verifications(env):
     env.commands.handle_stats(make_message(chat_id=GROUP_ID, chat_type="supergroup", user_id=1,
                                            text="/stats"))
     assert "Verified users: 1" in _replied_text(env.bot)
+
+
+def _file_id(dc: int) -> str:
+    """Encode a minimal Bot API style file_id (zero-byte RLE + base64url) for the given DC."""
+    import base64
+    import struct
+
+    raw = struct.pack("<ii", 2 | (1 << 25), dc) + b"\x00" * 6 + b"\x04"
+    out = bytearray()
+    i = 0
+    while i < len(raw):
+        if raw[i] == 0:
+            n = 0
+            while i < len(raw) and raw[i] == 0:
+                n += 1
+                i += 1
+            out += bytes([0, n])
+        else:
+            out.append(raw[i])
+            i += 1
+    return base64.urlsafe_b64encode(bytes(out)).decode().rstrip("=")
+
+
+def test_dc_from_file_id_and_pin_text():
+    from src.utils.helpers import build_user_info_pin_text
+    from src.utils.user_meta import dc_from_file_id
+
+    assert dc_from_file_id(_file_id(5)) == 5
+    assert dc_from_file_id(_file_id(9)) is None
+    assert "• Data Center: DC5 🇸🇬 Singapore\n" in build_user_info_pin_text(1, "A", None, None, dc=5)
+
+
+def test_get_user_dc_without_photo_or_on_error():
+    from types import SimpleNamespace
+    from unittest.mock import MagicMock
+
+    from src.utils.user_meta import get_user_dc
+
+    bot = MagicMock()
+    bot.get_user_profile_photos.return_value = SimpleNamespace(total_count=0, photos=[])
+    assert get_user_dc(bot, 1) is None
+    bot.get_user_profile_photos.side_effect = RuntimeError("boom")
+    assert get_user_dc(bot, 1) is None
+    bot.get_user_profile_photos.side_effect = None
+    bot.get_user_profile_photos.return_value = SimpleNamespace(
+        total_count=1, photos=[[SimpleNamespace(file_id=_file_id(2))]])
+    assert get_user_dc(bot, 1) == 2
+
+
+def test_estimate_registration_bounds_and_interpolation():
+    from datetime import date
+
+    from src.utils.user_meta import _ID_DATES, estimate_registration, format_registration
+
+    (lo_id, lo_date), (hi_id, hi_date) = _ID_DATES[1], _ID_DATES[2]
+    status, d = estimate_registration((lo_id + hi_id) // 2)
+    assert status == "approx" and lo_date <= d <= hi_date
+    assert estimate_registration(lo_id) == ("approx", lo_date)
+    assert estimate_registration(_ID_DATES[-1][0] + 1) == ("after", _ID_DATES[-1][1])
+    assert format_registration(_ID_DATES[-1][0] + 1) == "after " + _ID_DATES[-1][1].strftime("%Y-%m")
+    assert isinstance(d, date)

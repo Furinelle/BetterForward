@@ -10,6 +10,7 @@ from src.config import logger, _
 from src.utils.captcha import parse_captcha_config, pick_captcha_type
 from src.utils.db_helper import get_db_connection
 from src.utils.helpers import build_user_info_pin_text, escape_markdown, send_and_pin_user_info, to_html
+from src.utils.user_meta import get_user_dc
 from src.utils.message_permissions import classify_message_permissions
 from src.utils.message_split import split_caption, split_html_text
 from src.utils.stats import record_incoming, record_outgoing
@@ -445,7 +446,8 @@ class MessageHandler:
                     userid, message.from_user.first_name, message.from_user.last_name,
                     message.from_user.username,
                     language_code=getattr(message.from_user, "language_code", None),
-                    tag=tag_row[0] if tag_row else None)
+                    tag=tag_row[0] if tag_row else None,
+                    dc=get_user_dc(self.bot, userid))
                 send_and_pin_user_info(self.bot, self.group_id, thread_id, pin_text)
             else:
                 thread_id = thread_id[0]

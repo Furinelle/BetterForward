@@ -1716,3 +1716,27 @@ msgstr "为消息 {} 添加处理确认表情失败：{}"
 
 msgid "Failed to remove processed reaction from message {}: {}"
 msgstr "移除消息 {} 的处理确认表情失败：{}"
+
+msgid "Data Center"
+msgstr "数据中心"
+
+msgid "Registered"
+msgstr "注册时间"
+
+msgid "approx. {}"
+msgstr "约 {}"
+
+msgid "before {}"
+msgstr "早于 {}"
+
+msgid "after {}"
+msgstr "晚于 {}"
+
+msgid "Miami"
+msgstr "迈阿密"
+
+msgid "Amsterdam"
+msgstr "阿姆斯特丹"
+
+msgid "Singapore"
+msgstr "新加坡"

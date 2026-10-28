@@ -21,6 +21,7 @@ from telebot.types import Message
 from src.config import logger, _
 from src.utils.captcha import VERIFICATION_DAYS_SETTING, verification_days
 from src.utils.helpers import build_user_info_pin_text, parse_start_payload, send_and_pin_user_info, to_html
+from src.utils.user_meta import get_user_dc
 from src.utils.message_split import split_caption, split_html_text
 from src.utils.message_permissions import classify_message_permissions
 from src.utils.stats import get_summary, get_user_stats
@@ -499,7 +500,8 @@ class CommandHandler:
 
         pin_text = build_user_info_pin_text(
             user_id, chat.first_name, chat.last_name, chat.username,
-            language_code=language_code, tag=self._get_user_tag(user_id))
+            language_code=language_code, tag=self._get_user_tag(user_id),
+            dc=get_user_dc(self.bot, user_id))
         send_and_pin_user_info(self.bot, self.group_id, thread_id, pin_text)
         self.bot.reply_to(message, _("User info refreshed."))
 
