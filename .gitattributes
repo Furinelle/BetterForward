@@ -1,2 +1,4 @@
 # .mo is rebuilt from .po after merging upstream (needs: git config merge.ours.driver true)
 locale/**/*.mo merge=ours
+# Both sides append new msgid blocks at the end; a duplicate msgid then fails msgfmt --check
+locale/**/*.po merge=union
