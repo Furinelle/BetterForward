@@ -1740,3 +1740,9 @@ msgstr "阿姆斯特丹"
 
 msgid "Singapore"
 msgstr "新加坡"
+
+msgid "Verification timed out. Send /start to get a new one."
+msgstr "验证已超时，请发送 /start 重新获取验证。"
+
+msgid "TGuard verification timed out for user {}"
+msgstr "用户{}的TGuard验证已超时"

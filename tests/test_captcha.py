@@ -277,8 +277,15 @@ def test_start_for_verified_user_sends_only_configured_welcome(env):
     assert env.captcha.get_pending(USER_ID) is None
 
 
+def _fake_clock(monkeypatch):
+    clock = [0.0]
+    monkeypatch.setattr("src.utils.captcha.time.monotonic", lambda: clock[0])
+    monkeypatch.setattr("src.utils.captcha.time.sleep", lambda s: clock.__setitem__(0, clock[0] + s))
+    return clock
+
+
 def test_tguard_watcher_stops_on_completion_or_replaced_token(env, monkeypatch):
-    monkeypatch.setattr("src.utils.captcha.time.sleep", lambda _s: None)
+    _fake_clock(monkeypatch)
     results = iter([False, False, True])
     calls = []
 
@@ -288,13 +295,29 @@ def test_tguard_watcher_stops_on_completion_or_replaced_token(env, monkeypatch):
 
     monkeypatch.setattr(env.captcha, "check_tguard_verification_status", fake_check)
     env.cache.set(f"tguard_token_{USER_ID}", "tok")
-    env.captcha._watch_tguard(USER_ID, "tok")
+    env.captcha._watch_tguard(USER_ID, "tok", message_id=42)
     assert calls == [USER_ID] * 3
+    env.bot.edit_message_reply_markup.assert_called_with(USER_ID, 42, reply_markup=None)
 
     calls.clear()
     env.cache.set(f"tguard_token_{USER_ID}", "newer")
-    env.captcha._watch_tguard(USER_ID, "tok")
+    env.captcha._watch_tguard(USER_ID, "tok", message_id=43)
     assert calls == []
+    env.bot.edit_message_reply_markup.assert_called_with(USER_ID, 43, reply_markup=None)
+
+
+def test_tguard_watcher_times_out_and_tells_user(env, monkeypatch):
+    clock = _fake_clock(monkeypatch)
+    monkeypatch.setattr(env.captcha, "check_tguard_verification_status", lambda *a, **k: False)
+    env.captcha.set_pending(USER_ID, "tguard", None)
+    env.cache.set(f"tguard_token_{USER_ID}", "tok")
+    env.bot.send_message.reset_mock()
+    env.captcha._watch_tguard(USER_ID, "tok", message_id=42)
+    assert clock[0] >= 590
+    assert env.captcha.get_pending(USER_ID) is None
+    assert env.cache.get(f"tguard_token_{USER_ID}") is None
+    assert "/start" in env.bot.send_message.call_args.args[1]
+    env.bot.edit_message_reply_markup.assert_called_with(USER_ID, 42, reply_markup=None)
 
 
 def test_tguard_message_passes_when_watcher_already_verified(env, monkeypatch):

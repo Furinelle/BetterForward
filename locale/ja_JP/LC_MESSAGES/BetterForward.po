@@ -1752,3 +1752,9 @@ msgstr "アムステルダム"
 
 msgid "Singapore"
 msgstr "シンガポール"
+
+msgid "Verification timed out. Send /start to get a new one."
+msgstr "認証がタイムアウトしました。/start を送信して新しい認証を受けてください。"
+
+msgid "TGuard verification timed out for user {}"
+msgstr "ユーザー{}のTGuard認証がタイムアウトしました"

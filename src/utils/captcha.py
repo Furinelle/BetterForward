@@ -401,7 +401,6 @@ class CaptchaManager:
 
                 self.set_pending(user_id, "tguard", None, ttl=TGUARD_TTL)
                 self.cache.set(f"tguard_token_{user_id}", token, TGUARD_TTL)
-                threading.Thread(target=self._watch_tguard, args=(user_id, token), daemon=True).start()
 
                 markup = types.InlineKeyboardMarkup()
                 markup.add(types.InlineKeyboardButton(
@@ -409,12 +408,14 @@ class CaptchaManager:
                     web_app=types.WebAppInfo(url=verification_url)
                 ))
 
-                self.bot.send_message(
+                prompt = self.bot.send_message(
                     user_id,
                     _("Please complete the verification by clicking the button below.\n"
                       "After completing verification, send a message to check your verification status."),
                     reply_markup=markup
                 )
+                threading.Thread(target=self._watch_tguard, args=(user_id, token, prompt.message_id),
+                                 daemon=True).start()
                 return None
         except httpx.HTTPStatusError as e:
             error_msg = _("TGuard API error: {}").format(e)
@@ -443,15 +444,30 @@ class CaptchaManager:
                     pass
             raise ValueError(_("Failed to create verification request"))
 
-    def _watch_tguard(self, user_id: int, token: str):
-        """Poll until the challenge is solved so the success message arrives right away."""
-        for _i in range(TGUARD_TTL // TGUARD_POLL_INTERVAL):
-            time.sleep(TGUARD_POLL_INTERVAL)
-            # A newer challenge, a manual /verify or an expiry replaced or cleared this token.
-            if self.cache.get(f"tguard_token_{user_id}") != token:
-                return
-            if self.check_tguard_verification_status(user_id):
-                return
+    def _watch_tguard(self, user_id: int, token: str, message_id=None):
+        """Poll until the challenge is solved so the success message arrives right away;
+        tell the user when it times out. The prompt's button is removed either way."""
+        deadline = time.monotonic() + TGUARD_TTL - TGUARD_POLL_INTERVAL
+        try:
+            while time.monotonic() < deadline:
+                time.sleep(TGUARD_POLL_INTERVAL)
+                # A newer challenge, a manual /verify or an incoming message settled this token.
+                if self.cache.get(f"tguard_token_{user_id}") != token:
+                    return
+                if self.check_tguard_verification_status(user_id):
+                    return
+            if self.cache.get(f"tguard_token_{user_id}") == token:
+                self.clear_pending(user_id)
+                self.bot.send_message(user_id, _("Verification timed out. Send /start to get a new one."))
+                logger.info(_("TGuard verification timed out for user {}").format(user_id))
+        except Exception as e:
+            logger.error(_("Error checking TGuard verification status: {}").format(e))
+        finally:
+            if message_id is not None:
+                try:
+                    self.bot.edit_message_reply_markup(user_id, message_id, reply_markup=None)
+                except Exception:
+                    pass
 
     def check_tguard_verification_status(self, user_id: int, db=None) -> bool:
         """
