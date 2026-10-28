@@ -1,0 +1,2 @@
+# .mo is rebuilt from .po after merging upstream (needs: git config merge.ours.driver true)
+locale/**/*.mo merge=ours
