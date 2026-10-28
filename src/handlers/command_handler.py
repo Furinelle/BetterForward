@@ -19,7 +19,7 @@ from telebot.apihelper import (
 from telebot.types import Message
 
 from src.config import logger, _
-from src.utils.captcha import VERIFICATION_DAYS_SETTING, verification_days
+from src.utils.captcha import VERIFICATION_DAYS_SETTING, parse_captcha_config, pick_captcha_type, verification_days
 from src.utils.helpers import build_user_info_pin_text, parse_start_payload, send_and_pin_user_info, to_html
 from src.utils.user_meta import get_user_dc
 from src.utils.message_split import split_caption, split_html_text
@@ -130,15 +130,29 @@ class CommandHandler:
         else:
             if getattr(message.chat, "type", None) == "private":
                 self._save_start_tag(message)
+                if self._start_captcha(message.from_user.id):
+                    return
+            # Only a configured welcome message is sent; there is no built-in one.
             default_message = self._get_setting('default_message')
-            if default_message is None:
-                self.bot.send_message(message.chat.id,
-                                      _("I'm a bot that forwards messages, so please just tell me what you want to say.") + "\n" +
-                                      "Powered by [BetterForward](https://github.com/SideCloudGroup/BetterForward)",
-                                      parse_mode="Markdown",
-                                      disable_web_page_preview=True)
-            else:
+            if default_message is not None:
                 self.bot.send_message(message.chat.id, default_message)
+
+    def _start_captcha(self, user_id: int) -> bool:
+        """Send the verification challenge right away on /start; True when one was sent."""
+        config = parse_captcha_config(self.cache.get("setting_captcha"))
+        if not config.get("methods"):
+            return False
+        with sqlite3.connect(self.db_path) as db:
+            if self.captcha_manager.is_user_verified(user_id, db):
+                return False
+        captcha_type = pick_captcha_type(config, self.cache)
+        if not captcha_type:
+            return False
+        try:
+            self.captcha_manager.generate_captcha(user_id, captcha_type, config)
+        except Exception as e:
+            logger.error(_("Invalid captcha setting") + f": {e}")
+        return True
 
     def ban_user(self, message: Message):
         """Ban a user from sending messages."""

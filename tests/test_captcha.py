@@ -253,3 +253,25 @@ def test_random_selection_excludes_unconfigured_methods(env, monkeypatch):
                                            ("button", ["button"]), ("tguard", ["tguard"])])
 def test_legacy_captcha_settings_remain_supported(legacy, methods):
     assert parse_captcha_config(legacy)["methods"] == methods
+
+
+def _start(env, user_id=USER_ID):
+    handler = CommandHandler(env.bot, GROUP_ID, env.db_path, env.cache, None, env.captcha)
+    env.bot.send_message.reset_mock()
+    handler.help_command(make_message(chat_id=user_id, user_id=user_id, text="/start"), MagicMock())
+    return [c.args[1] for c in env.bot.send_message.call_args_list]
+
+
+def test_start_sends_challenge_to_unverified_user_without_welcome(env):
+    sent = _start(env)
+    assert len(sent) == 1 and "+" in sent[0]
+    assert env.captcha.get_pending(USER_ID)["type"] == "math"
+
+
+def test_start_for_verified_user_sends_only_configured_welcome(env):
+    env.captcha.set_user_verified(USER_ID, env.db)
+    assert _start(env) == []
+    env.db.execute("INSERT INTO settings (key, value) VALUES ('default_message', 'hi')")
+    env.db.commit()
+    assert _start(env) == ["hi"]
+    assert env.captcha.get_pending(USER_ID) is None
