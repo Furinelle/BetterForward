@@ -16,7 +16,7 @@ from src.utils.message_queue import MessageQueueManager
 from src.utils.permissions import PermissionManager
 from src.utils.reaction_ack import ReactionAck
 from src.utils.spam_detector_manager import SpamDetectorManager
-from src.utils.spam_detectors import KeywordSpamDetector
+from src.utils.spam_detectors import KeywordSpamDetector, RegexSpamDetector
 
 
 class TGBot:
@@ -63,6 +63,7 @@ class TGBot:
         self.spam_detector_manager = SpamDetectorManager()
         self.keyword_detector = KeywordSpamDetector()
         self.spam_detector_manager.register_detector(self.keyword_detector)
+        self.spam_detector_manager.register_detector(RegexSpamDetector())
 
         self.reaction_ack = ReactionAck(self.bot)
 
