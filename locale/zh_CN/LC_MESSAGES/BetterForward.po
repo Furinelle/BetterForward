@@ -1746,3 +1746,6 @@ msgstr "验证已超时，请发送 /start 重新获取验证。"
 
 msgid "TGuard verification timed out for user {}"
 msgstr "用户{}的TGuard验证已超时"
+
+msgid "The verification link expires in {} minutes."
+msgstr "验证链接 {} 分钟内有效。"

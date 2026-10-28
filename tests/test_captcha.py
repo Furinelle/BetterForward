@@ -107,6 +107,8 @@ def test_expired_user_reverifies_with_each_method(env, method, monkeypatch):
     assert not check_message(env)
     pending = env.captcha.get_pending(USER_ID)
     assert pending["type"] == method
+    if method == "tguard":
+        assert any("expires in 5 minutes" in c.args[1] for c in env.bot.send_message.call_args_list)
     if method == "math":
         assert not check_message(env, text=str(pending["answer"]))
     elif method == "qa":

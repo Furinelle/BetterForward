@@ -411,7 +411,8 @@ class CaptchaManager:
                 prompt = self.bot.send_message(
                     user_id,
                     _("Please complete the verification by clicking the button below.\n"
-                      "After completing verification, send a message to check your verification status."),
+                      "After completing verification, send a message to check your verification status.")
+                    + "\n" + _("The verification link expires in {} minutes.").format(TGUARD_TTL // 60),
                     reply_markup=markup
                 )
                 threading.Thread(target=self._watch_tguard, args=(user_id, token, prompt.message_id),

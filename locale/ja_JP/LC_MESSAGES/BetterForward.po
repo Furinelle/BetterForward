@@ -1758,3 +1758,6 @@ msgstr "認証がタイムアウトしました。/start を送信して新し�
 
 msgid "TGuard verification timed out for user {}"
 msgstr "ユーザー{}のTGuard認証がタイムアウトしました"
+
+msgid "The verification link expires in {} minutes."
+msgstr "認証リンクの有効期限は {} 分です。"
