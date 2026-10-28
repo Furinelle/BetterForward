@@ -275,3 +275,32 @@ def test_start_for_verified_user_sends_only_configured_welcome(env):
     env.db.commit()
     assert _start(env) == ["hi"]
     assert env.captcha.get_pending(USER_ID) is None
+
+
+def test_tguard_watcher_stops_on_completion_or_replaced_token(env, monkeypatch):
+    monkeypatch.setattr("src.utils.captcha.time.sleep", lambda _s: None)
+    results = iter([False, False, True])
+    calls = []
+
+    def fake_check(user_id, db=None):
+        calls.append(user_id)
+        return next(results)
+
+    monkeypatch.setattr(env.captcha, "check_tguard_verification_status", fake_check)
+    env.cache.set(f"tguard_token_{USER_ID}", "tok")
+    env.captcha._watch_tguard(USER_ID, "tok")
+    assert calls == [USER_ID] * 3
+
+    calls.clear()
+    env.cache.set(f"tguard_token_{USER_ID}", "newer")
+    env.captcha._watch_tguard(USER_ID, "tok")
+    assert calls == []
+
+
+def test_tguard_message_passes_when_watcher_already_verified(env, monkeypatch):
+    env.captcha.set_pending(USER_ID, "tguard", None)
+    env.captcha.set_user_verified(USER_ID, env.db)
+    env.captcha.set_pending(USER_ID, "tguard", None)
+    monkeypatch.setattr(env.captcha, "check_tguard_verification_status", lambda *a, **k: False)
+    env.cache.set("setting_captcha", json.dumps({"methods": ["tguard"]}))
+    assert check_message(env)

@@ -2,6 +2,7 @@
 
 import json
 import random
+import threading
 import time
 
 import httpx
@@ -17,6 +18,10 @@ QA_MAX_ITEMS = 10
 PENDING_TTL = 300
 PENDING_KEY_PREFIX = "captcha_pending_"
 VERIFICATION_DAYS_SETTING = "captcha_verification_days"
+TGUARD_POLL_INTERVAL = 2
+TGUARD_TTL = 600
+# Serializes the status check between the background watcher and incoming messages.
+_tguard_lock = threading.Lock()
 EMOJI_POOL = (
     "🍎", "🍌", "🍇", "🍉", "🍊", "🍋", "🍓", "🍑",
     "🥝", "🍍", "🥥", "🍒", "🥕", "🌽", "🥑", "🍆",
@@ -394,8 +399,9 @@ class CaptchaManager:
                             pass
                     raise ValueError(error_msg)
 
-                self.set_pending(user_id, "tguard", None, ttl=600)
-                self.cache.set(f"tguard_token_{user_id}", token, 600)
+                self.set_pending(user_id, "tguard", None, ttl=TGUARD_TTL)
+                self.cache.set(f"tguard_token_{user_id}", token, TGUARD_TTL)
+                threading.Thread(target=self._watch_tguard, args=(user_id, token), daemon=True).start()
 
                 markup = types.InlineKeyboardMarkup()
                 markup.add(types.InlineKeyboardButton(
@@ -437,12 +443,26 @@ class CaptchaManager:
                     pass
             raise ValueError(_("Failed to create verification request"))
 
+    def _watch_tguard(self, user_id: int, token: str):
+        """Poll until the challenge is solved so the success message arrives right away."""
+        for _i in range(TGUARD_TTL // TGUARD_POLL_INTERVAL):
+            time.sleep(TGUARD_POLL_INTERVAL)
+            # A newer challenge, a manual /verify or an expiry replaced or cleared this token.
+            if self.cache.get(f"tguard_token_{user_id}") != token:
+                return
+            if self.check_tguard_verification_status(user_id):
+                return
+
     def check_tguard_verification_status(self, user_id: int, db=None) -> bool:
         """
         Check TGuard verification status immediately.
-        Called when user sends a message to check if verification is completed.
+        Called by the background watcher and when the user sends a message.
         Returns True if verification is completed, False otherwise.
         """
+        with _tguard_lock:
+            return self._check_tguard_verification_status(user_id, db)
+
+    def _check_tguard_verification_status(self, user_id: int, db=None) -> bool:
         token = self.cache.get(f"tguard_token_{user_id}")
         if not token:
             return False

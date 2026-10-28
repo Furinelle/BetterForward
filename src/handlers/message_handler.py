@@ -312,7 +312,9 @@ class MessageHandler:
                                       reply_to_message_id=message.message_id)
                 return False
             if pending_type == "tguard":
-                if self.captcha_manager.check_tguard_verification_status(user_id, db):
+                # The background watcher may have completed it after `pending` was read.
+                if (self.captcha_manager.check_tguard_verification_status(user_id, db)
+                        or self.captcha_manager.is_user_verified(user_id, db)):
                     logger.info(
                         _("User {} completed TGuard verification (checked on message)").format(user_id))
                     return True

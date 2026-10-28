@@ -113,7 +113,7 @@ body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:c
 main{padding:24px 16px;text-align:center;max-width:360px}
 h1{font-size:20px;margin:0 0 8px}p{margin:0 0 20px;color:var(--hint)}#msg{margin-top:16px;min-height:24px}
 </style></head><body><main>
-<h1>人机验证</h1><p>完成下方验证后，回到聊天发送消息即可。</p>
+<h1>人机验证</h1><p>完成下方验证后即可回到聊天。</p>
 <div class="cf-turnstile" data-sitekey="${env.TURNSTILE_SITEKEY}" data-callback="done" data-language="zh-cn"></div>
 <div id="msg"></div>
 </main><script>
@@ -123,7 +123,7 @@ async function done(response) {
   msg.textContent = "正在确认…";
   const r = await fetch(location.pathname, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({response})});
   const d = await r.json().catch(() => ({}));
-  if (d.ok) { msg.textContent = "✅ 验证成功，请回到聊天发送消息。"; if (tg) setTimeout(() => tg.close(), 1500); }
+  if (d.ok) { msg.textContent = "✅ 验证成功，可以回到聊天了。"; if (tg) setTimeout(() => tg.close(), 1500); }
   else { msg.textContent = d.error === "expired" ? "链接已过期，请回到聊天重新发送消息获取新的验证。" : "验证失败，请重试。"; if (window.turnstile) turnstile.reset(); }
 }
 </script></body></html>`;
