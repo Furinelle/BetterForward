@@ -313,7 +313,7 @@ def test_tguard_watcher_times_out_and_tells_user(env, monkeypatch):
     env.cache.set(f"tguard_token_{USER_ID}", "tok")
     env.bot.send_message.reset_mock()
     env.captcha._watch_tguard(USER_ID, "tok", message_id=42)
-    assert clock[0] >= 590
+    assert clock[0] >= 290
     assert env.captcha.get_pending(USER_ID) is None
     assert env.cache.get(f"tguard_token_{USER_ID}") is None
     assert "/start" in env.bot.send_message.call_args.args[1]

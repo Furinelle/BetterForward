@@ -5,7 +5,7 @@
 // The user opens /v/:token as a Telegram Mini App and solves Turnstile there.
 import { DurableObject, env } from "cloudflare:workers";
 
-const TTL_MS = 600_000;
+const TTL_MS = 300_000;
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 
 export class TokenStore extends DurableObject {

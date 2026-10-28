@@ -19,7 +19,7 @@ PENDING_TTL = 300
 PENDING_KEY_PREFIX = "captcha_pending_"
 VERIFICATION_DAYS_SETTING = "captcha_verification_days"
 TGUARD_POLL_INTERVAL = 2
-TGUARD_TTL = 600
+TGUARD_TTL = 300
 # Serializes the status check between the background watcher and incoming messages.
 _tguard_lock = threading.Lock()
 EMOJI_POOL = (
